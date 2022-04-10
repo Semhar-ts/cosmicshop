@@ -1,47 +1,38 @@
+from django.shortcuts import render,redirect
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import HttpResponseRedirect
 from django.urls import reverse
-import datetime
-#from annoying.functions import get_object_or_None
-from django.contrib.auth.decorators import login_required
+from django.views.generic import CreateView
+from django.urls import reverse_lazy
+from django.http import HttpResponse
+from .forms import ContactForm
 
 from .models import *
-
-
-# this is the default view
+# Create your views here.
 def index(request):
-    return render(request, "onlineshop/index.html")
+    return render (request, "onlineshop/index.html", {
+        "articles": Article.objects.all()
+    })
 
-
-# this is the view for login
 def login_view(request):
     if request.method == "POST":
+
         # Attempt to sign user in
         username = request.POST["username"]
         password = request.POST["password"]
         user = authenticate(request, username=username, password=password)
+
         # Check if authentication successful
         if user is not None:
             login(request, user)
             return HttpResponseRedirect(reverse("index"))
-        # if not authenticated
         else:
             return render(request, "onlineshop/login.html", {
-                "message": "Invalid username and/or password.",
-                "msg_type": "danger"
+                "message": "Invalid email and/or password."
             })
-    # if GET request
     else:
         return render(request, "onlineshop/login.html")
-
-
-# view for logging out
-def logout_view(request):
-    logout(request)
-    return HttpResponseRedirect(reverse("index"))
-
 
 # view for registering
 def register(request):
@@ -81,4 +72,27 @@ def register(request):
     else:
         return render(request, "onlineshop/register.html")
 
+def logout_view(request):
+    logout(request)
+    return HttpResponseRedirect(reverse("index"))
 
+
+def article(request, article_title):
+      article= Article.objects.get(title=article_title)
+      return render (request, "onlineshop/article.html", {
+        "article": article
+    })
+
+def cart(request):
+    return render(request, "onlineshop/cart.html")
+    
+#  CreateView to use ContactForm instead of the default form:
+   
+class ContactCreate(CreateView):
+    model = Contact
+    fields = ["first_name", "last_name", "message"]
+    success_url = reverse_lazy("thanks")
+
+
+def thanks(request):
+    return HttpResponse("Thank you! Will get in touch soon.")   
